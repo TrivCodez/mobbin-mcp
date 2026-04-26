@@ -1,3 +1,11 @@
+/**
+ * Utility functions for formatting various Mobbin data structures into human‑readable Markdown strings.
+ *
+ * The functions below are used by the CLI and the Copilot tools to present API results.
+ * They all honour the global {@link CHARACTER_LIMIT} constant and truncate output when
+ * necessary via the internal {@link truncate} helper.
+ */
+
 import { CHARACTER_LIMIT } from "../constants.js";
 import type {
   AppResult,
@@ -8,6 +16,15 @@ import type {
   AppPageScreen,
 } from "../types.js";
 
+/**
+ * Format a list of app search results.
+ *
+ * Each app is rendered as a Markdown section containing its name, tagline, categories,
+ * platform, identifiers, popularity metrics and a preview of up to two screen URLs.
+ *
+ * @param apps - Array of {@link AppResult} objects returned by the API.
+ * @returns A formatted string suitable for display in a CLI or GPT response.
+ */
 export function formatApps(apps: AppResult[]): string {
   if (apps.length === 0) return "No apps found.";
 
@@ -34,6 +51,15 @@ export function formatApps(apps: AppResult[]): string {
   return truncate(lines.join("\n\n"));
 }
 
+/**
+ * Format a list of screen results.
+ *
+ * Includes basic app information, platform, patterns, elements, the screen URL and
+ * optionally the extracted image dimensions.
+ *
+ * @param screens - Array of {@link ScreenResult} objects.
+ * @returns Markdown representation of the screens.
+ */
 export function formatScreens(screens: ScreenResult[]): string {
   if (screens.length === 0) return "No screens found.";
 
@@ -56,6 +82,16 @@ export function formatScreens(screens: ScreenResult[]): string {
   return truncate(lines.join("\n\n"));
 }
 
+/**
+ * Format a list of screens that belong to a specific app page.
+ *
+ * Mirrors {@link formatScreens} but adds the {@link AppPageScreen} specific fields
+ * such as explicit width/height and a flag indicating whether the screen is a key
+ * screen for the app.
+ *
+ * @param screens - Array of {@link AppPageScreen} objects.
+ * @returns Formatted Markdown string.
+ */
 export function formatAppPageScreens(screens: AppPageScreen[]): string {
   if (screens.length === 0) return "No screens found for this app.";
 
@@ -78,6 +114,15 @@ export function formatAppPageScreens(screens: AppPageScreen[]): string {
   return truncate(lines.join("\n\n"));
 }
 
+/**
+ * Format a list of user‑created flows.
+ *
+ * Each flow shows its name, the associated app (if any), actions, screens (up to five
+ * with hotspot indication) and an optional video URL.
+ *
+ * @param flows - Array of {@link FlowResult} objects.
+ * @returns Markdown describing the flows.
+ */
 export function formatFlows(flows: FlowResult[]): string {
   if (flows.length === 0) return "No flows found.";
 
@@ -107,6 +152,15 @@ export function formatFlows(flows: FlowResult[]): string {
   return truncate(lines.join("\n\n"));
 }
 
+/**
+ * Format a list of collections.
+ *
+ * Provides a high‑level overview of each collection including counts of apps, screens
+ * and flows for both mobile and web platforms, visibility and last update timestamp.
+ *
+ * @param collections - Array of {@link Collection} objects.
+ * @returns Formatted Markdown for the collections.
+ */
 export function formatCollections(collections: Collection[]): string {
   if (collections.length === 0) return "No collections found.";
 
@@ -127,6 +181,16 @@ export function formatCollections(collections: Collection[]): string {
   return truncate(lines.join("\n\n"));
 }
 
+/**
+ * Format the detailed view of a single screen.
+ *
+ * The function receives a rich parameter object – only the fields that are present
+ * are rendered.  Dimensions, dominant colours and other optional metadata are added
+ * when available.
+ *
+ * @param params - Object containing screen metadata.
+ * @returns A Markdown block describing the screen.
+ */
 export function formatScreenDetail(params: {
   screenUrl: string;
   screenId?: string;
@@ -170,8 +234,16 @@ export function formatScreenDetail(params: {
 type ContentCounts =
   DictionaryCategory["subCategories"][number]["entries"][number]["contentCounts"];
 
-// Three shapes in the wild: { type: { platform: count } }, { type: count }, or null.
-// Originally proven inline by commit 23592d2; extracted so formatFilterFacet can reuse.
+/**
+ * Helper to render the rarely‑used {@link ContentCounts} structure.
+ *
+ * The structure can appear in three shapes – a map of platform → count, a direct
+ * count, or be null.  This function normalises those shapes into a comma‑separated
+ * string.
+ *
+ * @param counts - The raw {@link ContentCounts} object.
+ * @returns Human readable string.
+ */
 export function formatContentCounts(counts: ContentCounts): string {
   return Object.entries(counts ?? {})
     .flatMap(([type, platforms]) => {
@@ -186,6 +258,16 @@ export function formatContentCounts(counts: ContentCounts): string {
     .join(", ");
 }
 
+/**
+ * Render a list of dictionary categories as filter facets.
+ *
+ * Depending on the options, the output can include definitions, content counts or
+ * both.  Hidden entries are excluded.
+ *
+ * @param categories - Array of {@link DictionaryCategory} objects.
+ * @param opts - Rendering options.
+ * @returns Truncated Markdown list.
+ */
 export function formatFilterFacet(
   categories: DictionaryCategory[],
   opts: { includeDefinitions: boolean; includeCounts: boolean },
@@ -215,6 +297,14 @@ export function formatFilterFacet(
   return truncate(text);
 }
 
+/**
+ * Truncate a string to the global {@link CHARACTER_LIMIT}.
+ *
+ * If the text exceeds the limit a truncation notice is appended.
+ *
+ * @param text - The text to potentially truncate.
+ * @returns Either the original text or the truncated version.
+ */
 function truncate(text: string): string {
   if (text.length <= CHARACTER_LIMIT) return text;
   return (
